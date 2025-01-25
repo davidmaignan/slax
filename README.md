@@ -7,6 +7,9 @@ iex -S mix phx.server
 
 iex -S mix
 iex> recompile()
+
+
+mix phx.routes
 ```
 
 To start your Phoenix server:
