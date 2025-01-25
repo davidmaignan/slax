@@ -91,6 +91,16 @@ attributes = ${class: "person", title: "Persion"}
 </ul>
 ```
 
+## Ecto
+
+```
+mix phx.gen.schema Chat.Room rooms name:text topic:text
+mix ecto.migrate
+mix ecto.migrations
+mix ecto.rollback
+mix ecto.dump
+```
+
 
 To start your Phoenix server:
 
