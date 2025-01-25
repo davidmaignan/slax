@@ -4,6 +4,9 @@
 mix ecto.create
 mix phx.server
 iex -S mix phx.server
+
+iex -S mix
+iex> recompile()
 ```
 
 To start your Phoenix server:
