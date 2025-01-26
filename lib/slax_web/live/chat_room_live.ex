@@ -33,11 +33,11 @@ defmodule SlaxWeb.ChatRoomLive do
   def mount(_params, _session, socket) do
     room = Room |> Repo.all() |> List.first()
 
-    {:ok, assign(socket, room: room, hide_topic?: false)}
+    {:ok, assign(socket, hide_topic?: false, room: room)}
   end
 
   @impl Phoenix.LiveView
   def handle_event("toggle-topic", _params, socket) do
-    {:noreply, assign(socket, hide_topic?: !socket.assigns.hide_topic?)}
+    {:noreply, update(socket, :hide_topic?, &(!&1))}
   end
 end
