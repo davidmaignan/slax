@@ -48,22 +48,23 @@ defmodule SlaxWeb.ChatRoomLive do
   def mount(params, _session, socket) do
     rooms = Room |> Repo.all()
 
+    {:ok, assign(socket, hide_topic?: false, rooms: rooms)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(params, _uri, socket) do
+    rooms = socket.assigns.rooms
+
     room =
       case Map.fetch(params, "id") do
         {:ok, id} ->
-          case rooms |> Enum.find(&(&1.id == String.to_integer(id))) do
-            nil ->
-              List.first(rooms)
+          %Room{} = Enum.find(rooms, &(to_string(&1.id) == id))
 
-            room ->
-              room
-          end
-
-        _ ->
+        :error ->
           List.first(rooms)
       end
 
-    {:ok, assign(socket, hide_topic?: false, rooms: rooms, room: room)}
+    {:noreply, assign(socket, room: room, hide_topic?: false)}
   end
 
   @impl Phoenix.LiveView
@@ -78,7 +79,7 @@ defmodule SlaxWeb.ChatRoomLive do
         "flex items-center h-8 text-sm pl-8 pr-3",
         (@active && "bg-slate-300") || "hover:bg-slate-300"
       ]}
-      navigate={~p"/rooms/#{@room}"}
+      patch={~p"/rooms/#{@room}"}
     >
       <.icon name="hero-hashtag" class="w-4 h-4" />
       <span class={["ml-2 leading-none", @active && "font-bold"]}>{@room.name}</span>
