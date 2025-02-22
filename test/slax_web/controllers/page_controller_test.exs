@@ -1,22 +1,34 @@
 defmodule SlaxWeb.PageControllerTest do
   use SlaxWeb.ConnCase
 
+  import Phoenix.LiveViewTest
+
   alias Slax.Chat.Room
   alias Slax.Repo
 
-  @attr %{name: "the-shire", topic: "Bilbo's birthday party"}
+  @room1 %{name: "the-shire", topic: "Bilbo's birthday party"}
+  @room2 %{name: "rivendale", topic: "Where the elves live"}
 
   setup do
-    user =
+    room1 =
       %Room{}
-      |> Room.changeset(@attr)
+      |> Room.changeset(@room1)
       |> Repo.insert!()
 
-    {:ok, user: user}
+    room2 =
+      %Room{}
+      |> Room.changeset(@room2)
+      |> Repo.insert!()
+
+    {:ok, rooms: [room1, room2]}
   end
 
   test "GET /", %{conn: conn} do
-    conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    {:ok, view, _html} = live(conn, ~p"/")
+    html = render(view)
+
+    h1 = Floki.find(html, "h1") |> Floki.text()
+    assert String.contains?(h1, "Slax")
+    assert String.contains?(h1, "rivendale")
   end
 end

@@ -29,6 +29,7 @@ defmodule SlaxWeb.ChatRoomLive.Edit do
     """
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"id" => id}, _session, socket) do
     room = Chat.get_room!(id)
 
