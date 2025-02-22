@@ -29,6 +29,13 @@ defmodule SlaxWeb.ChatRoomLive do
           <h1 class="text-sm font-bold leading-none">
             #{@room.name}
           </h1>
+          <.link
+            class="font-normal text-xs text-blue-600 hover:text-blue-700"
+            navigate={~p"/rooms/#{@room}/edit"}
+          >
+            Edit
+          </.link>
+
           <div
             class={["text-xs leading-none h-3.5", @hide_topic? && "text-slate-600"]}
             phx-click="toggle-topic"
