@@ -1,4 +1,5 @@
 defmodule SlaxWeb.ChatRoomLive do
+  alias Slax.Accounts.User
   alias Expo.Message
   alias Slax.Chat
   use SlaxWeb, :live_view
@@ -108,13 +109,20 @@ defmodule SlaxWeb.ChatRoomLive do
       <div class="ml-2">
         <div class="-mt-1">
           <.link class="text-sm font-semibold hover:underline">
-            <span>User</span>
+            <span>{username(@message.user)}</span>
           </.link>
           <p class="text-sm">{@message.body}</p>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp username(%User{email: email}) do
+    email
+    |> String.split("@")
+    |> List.first()
+    |> String.capitalize()
   end
 
   @impl Phoenix.LiveView
