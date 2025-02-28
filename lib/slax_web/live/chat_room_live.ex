@@ -1,8 +1,9 @@
 defmodule SlaxWeb.ChatRoomLive do
+  alias Expo.Message
   alias Slax.Chat
   use SlaxWeb, :live_view
 
-  alias Slax.Chat.Room
+  alias Slax.Chat.{Message, Room}
   alias Slax.Chat
 
   @impl Phoenix.LiveView
@@ -89,6 +90,29 @@ defmodule SlaxWeb.ChatRoomLive do
           <% end %>
         </ul>
       </div>
+      <div class="flex flex-col grow overflow-auto">
+        <div id="messages-list">
+          <.message :for={message <- @messages} message={message} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :message, Message, required: true
+
+  defp message(assigns) do
+    ~H"""
+    <div class="relative flex px-4 py-3">
+      <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
+      <div class="ml-2">
+        <div class="-mt-1">
+          <.link class="text-sm font-semibold hover:underline">
+            <span>User</span>
+          </.link>
+          <p class="text-sm">{@message.body}</p>
+        </div>
+      </div>
     </div>
     """
   end
@@ -113,7 +137,15 @@ defmodule SlaxWeb.ChatRoomLive do
           List.first(rooms)
       end
 
-    {:noreply, assign(socket, hide_topic?: false, page_title: "#" <> room.name, room: room)}
+    messages = Chat.list_messages_in_room(room)
+
+    {:noreply,
+     assign(socket,
+       hide_topic?: false,
+       messages: messages,
+       page_title: "#" <> room.name,
+       room: room
+     )}
   end
 
   @impl Phoenix.LiveView
