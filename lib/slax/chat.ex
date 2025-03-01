@@ -1,6 +1,7 @@
 defmodule Slax.Chat do
   alias Expo.Message
   alias Slax.Chat.{Message, Room}
+  alias Slax.Accounts.User
   alias Slax.Repo
 
   import Ecto.Query
@@ -47,5 +48,11 @@ defmodule Slax.Chat do
     %Message{room: room, user: user}
     |> Message.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def delete_message(id, %User{id: user_id}) do
+    message = %Message{user_id: ^user_id} = Repo.get(Message, id)
+
+    Repo.delete(message)
   end
 end

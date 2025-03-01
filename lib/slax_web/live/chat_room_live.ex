@@ -5,6 +5,7 @@ defmodule SlaxWeb.ChatRoomLive do
   use SlaxWeb, :live_view
 
   alias Slax.Chat.{Message, Room}
+  alias Slax.Accounts.User
   alias Slax.Chat
 
   @impl Phoenix.LiveView
@@ -98,6 +99,7 @@ defmodule SlaxWeb.ChatRoomLive do
             dom_id={dom_id}
             message={message}
             timezone={@timezone}
+            current_user={@current_user}
           />
         </div>
       </div>
@@ -128,6 +130,7 @@ defmodule SlaxWeb.ChatRoomLive do
     """
   end
 
+  attr :current_user, User, required: true
   attr :dom_id, :string, required: true
   attr :message, Message, required: true
   attr :timezone, :string, required: true
@@ -135,8 +138,17 @@ defmodule SlaxWeb.ChatRoomLive do
   defp message(assigns) do
     ~H"""
     <div id={@dom_id} class="relative flex px-4 py-3">
+      <button
+        :if={@current_user.id == @message.user_id}
+        class="absolute top-4 right-4 p-2 text-red-500 hover:text-red-800 cursor-pointer"
+        data-confirm="Are you sure?"
+        phx-click="delete-message"
+        phx-value-id={@message.id}
+      >
+        <.icon name="hero-trash" class="w-4 h-4" />
+      </button>
       <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
-      <div class="ml-2">
+      <div class="ml-2 mr-1">
         <div class="-mt-1">
           <.link class="text-sm font-semibold hover:underline">
             <span>{username(@message.user)}</span>
@@ -201,6 +213,13 @@ defmodule SlaxWeb.ChatRoomLive do
 
   defp assign_message_form(socket, changeset) do
     assign(socket, :new_message_form, to_form(changeset))
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("delete-message", %{"id" => id}, socket) do
+    {:ok, message} = Chat.delete_message(id, socket.assigns.current_user)
+
+    {:noreply, stream_delete(socket, :messages, message)}
   end
 
   @impl Phoenix.LiveView
