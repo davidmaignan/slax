@@ -269,4 +269,9 @@ defmodule SlaxWeb.ChatRoomLive do
     </.link>
     """
   end
+
+  @impl Phoenix.LiveView
+  def handle_info(:shout, socket) do
+    {:noreply, update(socket, :room, &%{&1 | name: &1.name <> "!"})}
+  end
 end
