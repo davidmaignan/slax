@@ -186,6 +186,8 @@ defmodule SlaxWeb.ChatRoomLive do
 
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
+    if socket.assigns[:room], do: Chat.unsubscribe_from_room(socket.assigns.room)
+
     rooms = socket.assigns.rooms
 
     room =
@@ -198,6 +200,8 @@ defmodule SlaxWeb.ChatRoomLive do
       end
 
     messages = Chat.list_messages_in_room(room)
+
+    Chat.subscribe_to_room(room)
 
     socket =
       socket
@@ -218,9 +222,9 @@ defmodule SlaxWeb.ChatRoomLive do
 
   @impl Phoenix.LiveView
   def handle_event("delete-message", %{"id" => id}, socket) do
-    {:ok, message} = Chat.delete_message(id, socket.assigns.current_user)
+    Chat.delete_message(id, socket.assigns.current_user)
 
-    {:noreply, stream_delete(socket, :messages, message)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -242,11 +246,7 @@ defmodule SlaxWeb.ChatRoomLive do
     socket =
       case Chat.create_message(room, message_params, current_user) do
         {:ok, message} ->
-          message = Repo.preload(message, :user)
-
-          socket
-          |> stream_insert(:messages, message)
-          |> assign_message_form(Chat.change_message(%Message{}))
+          assign_message_form(socket, Chat.change_message(%Message{}))
 
         {:error, changeset} ->
           assign_message_form(socket, changeset)
@@ -273,5 +273,15 @@ defmodule SlaxWeb.ChatRoomLive do
   @impl Phoenix.LiveView
   def handle_info(:shout, socket) do
     {:noreply, update(socket, :room, &%{&1 | name: &1.name <> "!"})}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:new_message, message}, socket) do
+    {:noreply, stream_insert(socket, :messages, message)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:message_deleted, message}, socket) do
+    {:noreply, stream_delete(socket, :messages, message)}
   end
 end
