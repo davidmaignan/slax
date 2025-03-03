@@ -1,5 +1,4 @@
 defmodule SlaxWeb.ChatRoomLive do
-  alias Slax.Repo
   alias Expo.Message
   alias Slax.Chat
   use SlaxWeb, :live_view
@@ -7,6 +6,7 @@ defmodule SlaxWeb.ChatRoomLive do
   alias Slax.Chat.{Message, Room}
   alias Slax.Accounts.User
   alias Slax.Chat
+  alias SlaxWeb.OnlineUsers
 
   @impl Phoenix.LiveView
   def render(assigns) do
@@ -23,6 +23,21 @@ defmodule SlaxWeb.ChatRoomLive do
         </div>
         <div id="rooms-list">
           <.room_link :for={room <- @rooms} room={room} active={room.id == @room.id} />
+        </div>
+        <div class="mt-4">
+          <div class="flex items-center h-8 px-3">
+            <div class="flex items-center grow">
+              <span class="ml-2 leading-none font-medium text-sm">Users</span>
+            </div>
+          </div>
+
+          <div id="users-list">
+            <.user
+              :for={user <- @users}
+              user={user}
+              online={OnlineUsers.online?(@online_users, user.id)}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -136,6 +151,26 @@ defmodule SlaxWeb.ChatRoomLive do
     """
   end
 
+  attr :user, User, required: true
+
+  attr :online, :boolean, default: false
+
+  defp user(assigns) do
+    ~H"""
+    <.link class="flex items-center h-8 hover:bg-gray-300 text-sm pl-8 pr-3" href="#">
+      <div class="flex justify-center w-4">
+        <%= if @online do %>
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <% else %>
+          <span class="w-2 h-2 rounded-full border-2 border-gray-500"></span>
+        <% end %>
+      </div>
+
+      <span class="ml-2 leading-none">{username(@user)}</span>
+    </.link>
+    """
+  end
+
   attr :current_user, User, required: true
   attr :dom_id, :string, required: true
   attr :message, Message, required: true
@@ -184,10 +219,23 @@ defmodule SlaxWeb.ChatRoomLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     rooms = Chat.list_rooms()
-
+    users = Slax.Accounts.list_users()
     timezone = get_connect_params(socket)["timezone"]
 
-    {:ok, assign(socket, hide_topic?: false, rooms: rooms, timezone: timezone)}
+    if connected?(socket) do
+      OnlineUsers.track(self(), socket.assigns.current_user)
+    end
+
+    OnlineUsers.subscribe()
+
+    socket =
+      socket
+      |> assign(:rooms, rooms)
+      |> assign(:users, users)
+      |> assign(:timezone, timezone)
+      |> assign(:online_users, OnlineUsers.list())
+
+    {:ok, socket}
   end
 
   @impl Phoenix.LiveView
@@ -280,6 +328,12 @@ defmodule SlaxWeb.ChatRoomLive do
   @impl Phoenix.LiveView
   def handle_info(:shout, socket) do
     {:noreply, update(socket, :room, &%{&1 | name: &1.name <> "!"})}
+  end
+
+  def handle_info(%{event: "presence_diff", payload: diff}, socket) do
+    IO.puts("Presence diff: #{inspect(diff)}")
+    online_users = OnlineUsers.update(socket.assigns.online_users, diff)
+    {:noreply, assign(socket, online_users: online_users)}
   end
 
   @impl Phoenix.LiveView
