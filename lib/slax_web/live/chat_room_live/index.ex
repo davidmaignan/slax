@@ -3,6 +3,7 @@ defmodule SlaxWeb.ChatRoomLive.Index do
 
   alias Slax.Chat
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <main class="flex-1 p-6 max-w-4xl mx-auto">

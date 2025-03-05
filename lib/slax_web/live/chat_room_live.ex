@@ -208,6 +208,7 @@ defmodule SlaxWeb.ChatRoomLive do
   end
 
   attr :dom_id, :string, required: true
+  attr :on_click, JS, required: true
   attr :text, :string, required: true
 
   defp toggler(assigns) do
@@ -434,7 +435,6 @@ defmodule SlaxWeb.ChatRoomLive do
   end
 
   def handle_info(%{event: "presence_diff", payload: diff}, socket) do
-    IO.puts("Presence diff: #{inspect(diff)}")
     online_users = OnlineUsers.update(socket.assigns.online_users, diff)
     {:noreply, assign(socket, online_users: online_users)}
   end
