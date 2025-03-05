@@ -103,5 +103,17 @@ defmodule Slax.Chat do
     )
   end
 
+  def toggle_room_membership(room, user) do
+    case Repo.get_by(RoomMembership, room_id: room.id, user_id: user.id) do
+      nil ->
+        join_room!(room, user)
+        {room, true}
+
+      %RoomMembership{} = membership ->
+        Repo.delete(membership)
+        {room, false}
+    end
+  end
+
   defp topic(room_id), do: "chat_room:#{room_id}"
 end

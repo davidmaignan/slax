@@ -12,11 +12,14 @@ defmodule SlaxWeb.ChatRoomLive.Index do
 
       <div class="bg-slate-50 border rounded">
         <div id="rooms" class="divide-y" phx-update="stream">
-          <.link
+          <div
             :for={{id, {room, joined?}} <- @streams.rooms}
             class="cursor-pointer p-4 flex justify-between items-center group first:rounded-t last:rounded-b"
             id={id}
             navigate={~p"/rooms/#{room}"}
+            phx-click={open_room(room)}
+            phx-keydown={open_room(room)}
+            phx-key="Enter"
           >
             <div>
               <div class="font-medium mb-1">
@@ -39,13 +42,30 @@ defmodule SlaxWeb.ChatRoomLive.Index do
                 {room.topic}
               <% end %>
             </div>
-          </.link>
+
+            <button
+              class="opacity-0 group-hover:opacity-100 group-focus:opacity-100 focus:opacity-100 bg-white hover:bg-gray-100 border border-gray-400 text-gray-700 px-3 py-1.5 w-24 rounded-sm font-bold"
+              phx-click="toggle-room-membership"
+              phx-value-id={room.id}
+            >
+              <%= if joined? do %>
+                Leave
+              <% else %>
+                Join
+              <% end %>
+            </button>
+          </div>
         </div>
       </div>
     </main>
     """
   end
 
+  defp open_room(room) do
+    JS.navigate(~p"/rooms/#{room}")
+  end
+
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     rooms = Chat.list_rooms_with_joined(socket.assigns.current_user)
 
@@ -56,5 +76,17 @@ defmodule SlaxWeb.ChatRoomLive.Index do
       |> stream(:rooms, rooms)
 
     {:ok, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("toggle-room-membership", %{"id" => id}, socket) do
+    IO.puts("Toggling room membership for room #{id}")
+
+    {room, joined?} =
+      id
+      |> Chat.get_room!()
+      |> Chat.toggle_room_membership(socket.assigns.current_user)
+
+    {:noreply, stream_insert(socket, :rooms, {room, joined?})}
   end
 end
